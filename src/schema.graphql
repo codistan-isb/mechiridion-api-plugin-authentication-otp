@@ -19,8 +19,7 @@ extend input CreateUserInput {
 }
 enum UserRoleValue {
   admin
-  dispatcher
-  rider
+  user
 }
 
 type CreateUserResult {

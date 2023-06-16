@@ -98,268 +98,62 @@ export default {
     return null;
   },
   async createUser(_, { user }, ctx) {
-    // console.log(user);
     const { injector, infos, collections } = ctx;
-    const { Accounts, Groups, BranchData } = collections;
+    const { Accounts } = collections;
     const accountsServer = injector.get(server_1.AccountsServer);
     const accountsPassword = injector.get(password_1.AccountsPassword);
     let userId;
-    let AllBranchIDs;
-    if (!user.UserRole) {
-      try {
-        userId = await accountsPassword.createUser(user);
-      } catch (error) {
-        // If ambiguousErrorMessages is true we obfuscate the email or username already exist error
-        // to prevent user enumeration during user creation
-        if (
-          accountsServer.options.ambiguousErrorMessages &&
-          error instanceof server_1.AccountsJsError &&
-          (error.code === password_1.CreateUserErrors.EmailAlreadyExists ||
-            error.code === password_1.CreateUserErrors.UsernameAlreadyExists)
-        ) {
-          return {};
-        }
-        throw error;
-      }
-      if (!accountsServer.options.enableAutologin) {
-        return {
-          userId: accountsServer.options.ambiguousErrorMessages ? null : userId,
-        };
-      }
-      if (userId) {
-        const now = new Date();
-        const account = {
-          "_id": userId,
-          "acceptsMarketing": false,
-          "emails": [
-            {
-              "address": user.email,
-              "verified": false,
-              "provides": "default"
-            }
-          ],
-          "name": null,
-          "profile": {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            dob: user.dob,
-            phone: user.phone,
-          },
-          "shopId": null,
-          "state": "new",
-          "userId": userId,
-          "createdAt": now
-        }
-        // const accountAdded = await Accounts.insertOne({
-        //   _id: userId,
-        //   firstName: user.firstName,
-        //   lastName: user.lastName,
-        //   name: user.firstName + " " + user.lastName,
-        //   phone: user.phone,
-        //   UserRole: user.UserRole
-        // });
-        const accountAdded = await Accounts.insertOne(account);
-        // console.log("account Added:- ", accountAdded)
-      }
-      // if (userId) {
-      //         const accountAdded = await Accounts.insertOne({ _id: userId, firstName: user.firstName, lastName: user.lastName, name: user.firstName + " " + user.lastName, phone: user.phone })
-
-      // }
-      // When initializing AccountsServer we check that enableAutologin and ambiguousErrorMessages options
-      // are not enabled at the same time
-      const createdUser = await accountsServer.findUserById(userId);
-      // If we are here - user must be created successfully
-      // Explicitly saying this to Typescript compiler
-      const loginResult = await accountsServer.loginWithUser(
-        createdUser,
-        infos
-      );
-      await generateOtp(user.phone);
-      return {
-        userId,
-        loginResult,
-      };
-    } else if (user.UserRole === 'admin') {
-      if (!ctx.authToken) {
-        throw new ReactionError("access-denied", "Please Login First");
-      }
-      if (ctx.user === undefined || ctx.user === null) {
-        throw new ReactionError("access-denied", "Please Login First");
-      }
-      const GroupNameResp = await getGroupData(user.UserRole, Groups);
-      // console.log("Group Name Resp in return :-", GroupNameResp);
-      const branchData = await BranchData.find({}).toArray();
-      // console.log("branch Data ", branchData);
-      if (branchData) {
-        AllBranchIDs = branchData.map(data => data._id);
-        // console.log("AllBranchIDs ", AllBranchIDs);
-        // userId = await accountsPassword.createUser(user);
-        user.branches = AllBranchIDs;
-        // console.log("branches ", user);
-      }
-
-      userId = await accountsPassword.createUser(user);
-      if (!accountsServer.options.enableAutologin) {
-        return {
-          userId: accountsServer.options.ambiguousErrorMessages
-            ? null
-            : userId,
-        };
-      }
-      if (userId) {
-        const now = new Date();
-        const account = {
-          "_id": userId,
-          "acceptsMarketing": false,
-          "emails": [
-            {
-              "address": user.email,
-              "verified": false,
-              "provides": "default"
-            }
-          ],
-          "groups": [GroupNameResp],
-          "name": null,
-          "profile": {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            dob: user.dob,
-            phone: user.phone,
-          },
-          "shopId": null,
-          "state": "new",
-          "userId": userId,
-          "UserRole": user.UserRole,
-          "currentStatus": "online",
-          "createdAt": now,
-          "branches": user.branches
-        }
-        // const accountAdded = await Accounts.insertOne({
-        //   _id: userId,
-        //   firstName: user.firstName,
-        //   lastName: user.lastName,
-        //   name: user.firstName + " " + user.lastName,
-        //   phone: user.phone,
-        //   UserRole: user.UserRole
-        // });
-        const accountAdded = await Accounts.insertOne(account);
-        // console.log("account Added:- ", accountAdded)
-      }
-      // When initializing AccountsServer we check that enableAutologin and ambiguousErrorMessages options
-      // are not enabled at the same time
-      const createdUser = await accountsServer.findUserById(userId);
-      // If we are here - user must be created successfully
-      // Explicitly saying this to Typescript compiler
-      const loginResult = await accountsServer.loginWithUser(
-        createdUser,
-        infos
-      );
-      await generateOtp(user.phone);
-      return {
-        userId,
-        loginResult,
-      };
-    } else {
-      if (!ctx.authToken) {
-        throw new ReactionError("access-denied", "Please Login First");
-      }
-      if (ctx.user === undefined || ctx.user === null) {
-        throw new ReactionError("access-denied", "Please Login First");
-      }
-      // console.log(ctx.user.UserRole);
-      // console.log(user);
-      // console.log(user.UserRole);
-
-      // Check Permission for create user
-      // console.log(ctx.user.UserRole);
-      // console.log(user.UserRole);
-      const UserPermission = canCreateUser(ctx.user.UserRole, user.UserRole);
-      // console.log(UserPermission);
-      const GroupNameResp = await getGroupData(user.UserRole, Groups)
-      // console.log("Group Name Resp in return :-", GroupNameResp)
-      if (UserPermission) {
-        // Allow user creation
-        try {
-
-          userId = await accountsPassword.createUser(user);
-          // console.log(userId)
-        } catch (error) {
-          // If ambiguousErrorMessages is true we obfuscate the email or username already exist error
-          // to prevent user enumeration during user creation
-          if (
-            accountsServer.options.ambiguousErrorMessages &&
-            error instanceof server_1.AccountsJsError &&
-            (error.code === password_1.CreateUserErrors.EmailAlreadyExists ||
-              error.code === password_1.CreateUserErrors.UsernameAlreadyExists)
-          ) {
-            return {};
-          }
-          throw error;
-        }
-        if (!accountsServer.options.enableAutologin) {
-          return {
-            userId: accountsServer.options.ambiguousErrorMessages
-              ? null
-              : userId,
-          };
-        }
-        if (userId) {
-          const now = new Date();
-          const account = {
-            "_id": userId,
-            "acceptsMarketing": false,
-            "emails": [
-              {
-                "address": user.email,
-                "verified": false,
-                "provides": "default"
-              }
-            ],
-            "groups": [GroupNameResp],
-            "name": null,
-            "profile": {
-              firstName: user.firstName,
-              lastName: user.lastName,
-              dob: user.dob,
-              phone: user.phone,
-            },
-            "shopId": null,
-            "state": "new",
-            "userId": userId,
-            "UserRole": user.UserRole,
-            "currentStatus": "online",
-            "createdAt": now
-          }
-          // const accountAdded = await Accounts.insertOne({
-          //   _id: userId,
-          //   firstName: user.firstName,
-          //   lastName: user.lastName,
-          //   name: user.firstName + " " + user.lastName,
-          //   phone: user.phone,
-          //   UserRole: user.UserRole
-          // });
-          const accountAdded = await Accounts.insertOne(account);
-          // console.log("account Added:- ", accountAdded)
-        }
-        // When initializing AccountsServer we check that enableAutologin and ambiguousErrorMessages options
-        // are not enabled at the same time
-        const createdUser = await accountsServer.findUserById(userId);
-        // If we are here - user must be created successfully
-        // Explicitly saying this to Typescript compiler
-        const loginResult = await accountsServer.loginWithUser(
-          createdUser,
-          infos
-        );
-        await generateOtp(user.phone);
-        return {
-          userId,
-          loginResult,
-        };
-      } else {
-        // Deny user creation
-        throw new Error("Unauthorized");
-      }
+    if (!ctx.authToken) {
+      throw new ReactionError("access-denied", "Please Login First");
     }
+    if (ctx.user === undefined || ctx.user === null) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    userId = await accountsPassword.createUser(user);
+    if (!accountsServer.options.enableAutologin) {
+      return {
+        userId: accountsServer.options.ambiguousErrorMessages ? null : userId,
+      };
+    }
+    if (userId) {
+      const now = new Date();
+      const account = {
+        _id: userId,
+        acceptsMarketing: false,
+        emails: [
+          {
+            address: user.email,
+            verified: false,
+            provides: "default",
+          },
+        ],
+        name: null,
+        profile: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          dob: user.dob,
+          phone: user.phone,
+        },
+        shopId: null,
+        state: "new",
+        userId: userId,
+        UserRole: user.UserRole,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const accountAdded = await Accounts.insertOne(account);
+      // console.log("account Added:- ", accountAdded)
+    }
+    // When initializing AccountsServer we check that enableAutologin and ambiguousErrorMessages options
+    // are not enabled at the same time
+    const createdUser = await accountsServer.findUserById(userId);
+    // If we are here - user must be created successfully
+    // Explicitly saying this to Typescript compiler
+    const loginResult = await accountsServer.loginWithUser(createdUser, infos);
+    return {
+      userId,
+      loginResult,
+    };
   },
   changePassword: async (
     _,
@@ -388,27 +182,27 @@ export default {
       if (userId) {
         const now = new Date();
         const account = {
-          "_id": userId,
-          "acceptsMarketing": false,
-          "emails": [
+          _id: userId,
+          acceptsMarketing: false,
+          emails: [
             {
-              "address": user.email,
-              "verified": false,
-              "provides": "default"
-            }
+              address: user.email,
+              verified: false,
+              provides: "default",
+            },
           ],
-          "name": null,
-          "profile": {
+          name: null,
+          profile: {
             firstName: user.firstName,
             lastName: user.lastName,
             dob: user.dob,
             phone: user.phone,
           },
-          "shopId": null,
-          "state": "new",
-          "userId": userId,
-          "createdAt": now
-        }
+          shopId: null,
+          state: "new",
+          userId: userId,
+          createdAt: now,
+        };
         // const accountAdded = await Accounts.insertOne({
         //   _id: userId,
         //   firstName: user.firstName,
@@ -544,7 +338,11 @@ export default {
     // });
 
     const userAccountResponse = await Accounts.findOne({ _id: args.userId });
-    if (userAccountResponse && userAccountResponse.adminUIShopIds && userAccountResponse.adminUIShopIds.length > 0) {
+    if (
+      userAccountResponse &&
+      userAccountResponse.adminUIShopIds &&
+      userAccountResponse.adminUIShopIds.length > 0
+    ) {
       throw new Error("Cannot delete Super Admin");
     }
     const userResponse = await users.findOne({ _id: args.userId });
