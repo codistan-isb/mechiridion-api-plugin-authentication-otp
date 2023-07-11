@@ -140,6 +140,7 @@ export default {
         UserRole: user.UserRole,
         createdAt: now,
         updatedAt: now,
+        isDeleted: false,
       };
       const accountAdded = await Accounts.insertOne(account);
       // console.log("account Added:- ", accountAdded)

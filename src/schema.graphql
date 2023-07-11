@@ -16,6 +16,7 @@ extend input CreateUserInput {
   proofOfAddress: [String]
   # isOtp: Boolean
   UserRole: UserRoleValue
+  isDeleted: Boolean
 }
 enum UserRoleValue {
   admin
@@ -31,6 +32,7 @@ type CreateUserResult {
   govId: [String]
   proofOfAddress: [String]
   UserRole: UserRoleValue
+  isDeleted: Boolean
 }
 
 type phone {
