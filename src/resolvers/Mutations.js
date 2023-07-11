@@ -141,6 +141,7 @@ export default {
         createdAt: now,
         updatedAt: now,
         isDeleted: false,
+        isActive: false,
       };
       const accountAdded = await Accounts.insertOne(account);
       // console.log("account Added:- ", accountAdded)
