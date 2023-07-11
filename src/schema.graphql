@@ -22,10 +22,40 @@ extend input CreateUserInput {
 enum UserRoleValue {
   admin
   user
+  # shopOwner
+  # shopMember
+}
+type MemberPayload {
+  status: Boolean
+  message: String
+  userData: JSON
+  # userName: String!
+  # phone: String!
+  # email: String!
+  # firstName: String
+  # lastName: String
+  # isDeleted: Boolean
+  # isActive: Boolean
+  # profileImage: String
+  # memberRole: memberRoleValue
+}
+input addMemberInput {
+  userName: String!
+  phone: String!
+  email: String!
+  firstName: String
+  lastName: String
+  isDeleted: Boolean
+  isActive: Boolean
+  profileImage: String
+  memberRole: memberRoleValue
+  password: String
+  parentId: ID
+}
+enum memberRoleValue {
   shopOwner
   shopMember
 }
-
 type CreateUserResult {
   id: ID
   phone: String
@@ -62,9 +92,14 @@ extend type Mutation {
     serviceName: String!
     params: AuthenticateParamsInput!
   ): LoginResult
+  addMember(input: addMemberInput): MemberPayload
+  
 }
 
 type verifyOTPResponse {
   status: Boolean
   response: String
+}
+extend type Query {
+  getAllMembers: MemberPayload
 }

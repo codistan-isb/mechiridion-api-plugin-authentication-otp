@@ -152,11 +152,13 @@ export default {
     // If we are here - user must be created successfully
     // Explicitly saying this to Typescript compiler
     const loginResult = await accountsServer.loginWithUser(createdUser, infos);
+
     return {
       userId,
       loginResult,
     };
   },
+
   changePassword: async (
     _,
     { oldPassword, newPassword },
@@ -281,12 +283,27 @@ export default {
   authenticate: async (_, args, ctx) => {
     const { serviceName, params } = args;
     const { injector, infos, collections } = ctx;
-    const { users } = collections;
-    console.log("authenticate");
-    const authenticated = await injector
-      .get(server_1.AccountsServer)
-      .loginWithService(serviceName, params, infos);
-    return authenticated;
+    const { users, Accounts } = collections;
+    // console.log("authenticate");
+    // console.log("params ", params);
+    // console.log("params.user.email :  ", params.user.email);
+    const AccountResp = await Accounts.findOne({
+      "emails.0.address": params?.user?.email,
+    });
+    // console.log("AccountResp :  ", AccountResp);
+    if (AccountResp) {
+      if (AccountResp.isActive == true) {
+        const authenticated = await injector
+          .get(server_1.AccountsServer)
+          .loginWithService(serviceName, params, infos);
+        console.log("authenticate", authenticated);
+        return authenticated;
+      } else {
+        throw new ReactionError("not-found", "Contact administrator");
+      }
+    } else {
+      throw new ReactionError("not-found", "User not found");
+    }
   },
   authenticateWithOTP: async (_, args, ctx) => {
     const { serviceName, params } = args;
@@ -376,5 +393,114 @@ export default {
       throw new Error("Unauthorized");
     }
     return UserPermission;
+  },
+  async addMember(parent, { input }, context, info) {
+    // console.log("args :: ", input);
+    const { injector, infos, collections } = context;
+    const { Accounts } = collections;
+    const accountsServer = injector.get(server_1.AccountsServer);
+    const accountsPassword = injector.get(password_1.AccountsPassword);
+    // console.log("auth Token : ", context.authToken);
+    // console.log("user info : ", context.user);
+    let userId;
+    if (!context.authToken) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    if (context.user === undefined || context.user === null) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    if (input.memberRole === "shopOwner") {
+      userId = await accountsPassword.createUser(input);
+      console.log("userId : ", userId);
+      if (!accountsServer.options.enableAutologin) {
+        return {
+          userId: accountsServer.options.ambiguousErrorMessages ? null : userId,
+        };
+      }
+      if (userId) {
+        const now = new Date();
+        const account = {
+          _id: userId,
+          acceptsMarketing: false,
+          emails: [
+            {
+              address: input.email,
+              verified: false,
+              provides: "default",
+            },
+          ],
+          name: null,
+          profile: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            dob: input.dob,
+            phone: input.phone,
+          },
+          shopId: null,
+          state: "new",
+          userId: userId,
+          memberRole: input.memberRole,
+          createdAt: now,
+          updatedAt: now,
+          isDeleted: false,
+          isActive: true,
+        };
+        const accountAdded = await Accounts.insertOne(account);
+        console.log("accountAdded ", accountAdded);
+        return {
+          status: true,
+          message: "account created",
+          userData: accountAdded.ops[0],
+        };
+      }
+    } else if (input.memberRole === "shopMember") {
+      console.log("shopMember ");
+      // console.log("auth Token : ", context.authToken);
+      // console.log("user info : ", context.user);
+      userId = await accountsPassword.createUser(input);
+      console.log("userId : ", userId);
+      if (!accountsServer.options.enableAutologin) {
+        return {
+          userId: accountsServer.options.ambiguousErrorMessages ? null : userId,
+        };
+      }
+      if (userId) {
+        const now = new Date();
+        const account = {
+          _id: userId,
+          acceptsMarketing: false,
+          emails: [
+            {
+              address: input.email,
+              verified: false,
+              provides: "default",
+            },
+          ],
+          name: null,
+          profile: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            dob: input.dob,
+            phone: input.phone,
+          },
+          shopId: null,
+          state: "new",
+          userId: userId,
+          memberRole: input.memberRole,
+          parentId: input.parentId,
+          createdAt: now,
+          updatedAt: now,
+          isDeleted: false,
+          isActive: true,
+        };
+        const accountAdded = await Accounts.insertOne(account);
+        console.log("accountAdded ", accountAdded);
+        return {
+          status: true,
+          message: "account created",
+          userData: accountAdded.ops[0],
+        };
+      }
+    }
   },
 };
