@@ -283,28 +283,38 @@ export default {
   authenticate: async (_, args, ctx) => {
     const { serviceName, params } = args;
     const { injector, infos, collections } = ctx;
-    const { users, Accounts } = collections;
-    // console.log("authenticate");
-    // console.log("params ", params);
-    // console.log("params.user.email :  ", params.user.email);
-    const AccountResp = await Accounts.findOne({
-      "emails.0.address": params?.user?.email,
-    });
-    // console.log("AccountResp :  ", AccountResp);
-    if (AccountResp) {
-      if (AccountResp.isActive == true) {
-        const authenticated = await injector
-          .get(server_1.AccountsServer)
-          .loginWithService(serviceName, params, infos);
-        console.log("authenticate", authenticated);
-        return authenticated;
-      } else {
-        throw new ReactionError("not-found", "Contact administrator");
-      }
-    } else {
-      throw new ReactionError("not-found", "User not found");
-    }
+    const { users } = collections;
+    console.log("authenticate");
+    const authenticated = await injector
+      .get(server_1.AccountsServer)
+      .loginWithService(serviceName, params, infos);
+    return authenticated;
   },
+  // authenticate: async (_, args, ctx) => {
+  //   const { serviceName, params } = args;
+  //   const { injector, infos, collections } = ctx;
+  //   const { users, Accounts } = collections;
+  //   console.log("authenticate");
+  //   // console.log("params ", params);
+  //   // console.log("params.user.email :  ", params.user.email);
+  //   const AccountResp = await Accounts.findOne({
+  //     "emails.0.address": params?.user?.email,
+  //   });
+  //   console.log("AccountResp :  ", AccountResp);
+  //   // if (AccountResp) {
+  //     // if (AccountResp.isActive == true) {
+  //       const authenticated = await injector
+  //         .get(server_1.AccountsServer)
+  //         .loginWithService(serviceName, params, infos);
+  //       console.log("authenticate", authenticated);
+  //       return authenticated;
+  //     // } else {
+  //     //   throw new ReactionError("not-found", "Contact administrator");
+  //     // }
+  //   // } else {
+  //   //   throw new ReactionError("not-found", "User not found");
+  //   // }
+  // },
   authenticateWithOTP: async (_, args, ctx) => {
     const { serviceName, params } = args;
     const { injector, infos, collections } = ctx;
