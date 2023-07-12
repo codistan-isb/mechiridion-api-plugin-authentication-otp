@@ -1,3 +1,5 @@
+import ReactionError from "@reactioncommerce/reaction-error";
+
 export default {
   async getAllMembers(parent, args, context, info) {
     const { collections } = context;

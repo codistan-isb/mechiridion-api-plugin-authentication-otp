@@ -429,13 +429,15 @@ export default {
               provides: "default",
             },
           ],
-          name: null,
+          name: input.firstName + " " + input.lastName,
           profile: {
             firstName: input.firstName,
             lastName: input.lastName,
             dob: input.dob,
             phone: input.phone,
+            userName: input.userName,
           },
+          userName: input.userName,
           shopId: null,
           state: "new",
           userId: userId,
@@ -482,7 +484,9 @@ export default {
             lastName: input.lastName,
             dob: input.dob,
             phone: input.phone,
+            userName: input.userName,
           },
+          userName: input.userName,
           shopId: null,
           state: "new",
           userId: userId,
@@ -501,6 +505,151 @@ export default {
           userData: accountAdded.ops[0],
         };
       }
+    }
+  },
+  async updateMember(parent, { input }, context, info) {
+    // console.log("Input ", input);
+    // console.log("user ", context.user);
+    if (!context.authToken) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    if (context.user === undefined || context.user === null) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    const { Accounts } = context.collections;
+    const {
+      accountId,
+      userName,
+      firstName,
+      lastName,
+      isDeleted,
+      memberRole,
+      isActive,
+      parentId,
+    } = input;
+    if (!accountId) throw new ReactionError("access-denied", "Access Denied");
+    const account = await Accounts.findOne(
+      { _id: accountId, parentId: context?.user?._id || context?.user?.id },
+      { projection: { userId: 1 } }
+    );
+    console.log("account ", account);
+    if (!account) throw new ReactionError("not-found", "No account found");
+
+    const updates = {};
+    const updatedFields = [];
+
+    if (typeof userName === "string" || userName === null) {
+      // For some reason we store name in two places. Should fix eventually.
+      updates.userName = userName;
+      updates["profile.userName"] = userName;
+      updatedFields.push("userName");
+    }
+    if (isDeleted != null || isDeleted != undefined) {
+      updates["isDeleted"] = isDeleted;
+      updatedFields.push("isDeleted");
+    }
+    if (isActive != null || isActive != undefined) {
+      updates["isActive"] = isActive;
+      updatedFields.push("isActive");
+    }
+    if (typeof firstName === "string" || firstName === null) {
+      updates["profile.firstName"] = firstName;
+      updatedFields.push("firstName");
+    }
+    if (typeof lastName === "string" || lastName === null) {
+      updates["profile.lastName"] = lastName;
+      updatedFields.push("lastName");
+    }
+    console.log("updates ", updates);
+    console.log("updatedFields ", updatedFields);
+    if (updatedFields.length === 0) {
+      throw new ReactionError(
+        "invalid-argument",
+        "At least one field to update is required"
+      );
+    }
+    const modifier = {
+      $set: {
+        ...updates,
+        updatedAt: new Date(),
+      },
+    };
+    const { value: updatedAccount } = await Accounts.findOneAndUpdate(
+      {
+        _id: accountId,
+      },
+      modifier,
+      {
+        returnOriginal: false,
+      }
+    );
+    // console.log("updatedAccount ", updatedAccount);
+    if (updatedAccount) {
+      return {
+        status: true,
+        message: "Account updated",
+        userData: updatedAccount,
+      };
+    } else {
+      throw new ReactionError(
+        "server-error",
+        "Unable to update account. Try again later"
+      );
+    }
+  },
+  async deleteMember(parent, args, context, info) {
+    console.log("args:: ", args);
+    if (!!args) {
+      throw new ReactionError("invalid-argument", "id is required");
+    }
+    const { id } = args;
+    if (!context.authToken) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    if (context.user === undefined || context.user === null) {
+      throw new ReactionError("access-denied", "Please Login First");
+    }
+    const { users, Accounts } = context.collections;
+    console.log("user ", context.user);
+    const account = await Accounts.findOne(
+      { _id: id, parentId: context?.user?._id || context?.user?.id },
+      { projection: { userId: 1 } }
+    );
+    console.log("account ", account);
+    const updates = {};
+    const updatedFields = [];
+    if (!account.userId) {
+      throw new ReactionError("not-found", "Account not found");
+    }
+    updates["isDeleted"] = true;
+    updatedFields.push("isDeleted");
+    const modifier = {
+      $set: {
+        ...updates,
+        updatedAt: new Date(),
+      },
+    };
+    const { value: updatedAccount } = await Accounts.findOneAndUpdate(
+      {
+        _id: id,
+      },
+      modifier,
+      {
+        returnOriginal: false,
+      }
+    );
+    console.log("updatedAccount ", updatedAccount);
+    if (updatedAccount) {
+      return {
+        status: true,
+        message: "Account deleted",
+        userData: updatedAccount,
+      };
+    } else {
+      throw new ReactionError(
+        "server-error",
+        "Unable to update account. Try again later"
+      );
     }
   },
 };

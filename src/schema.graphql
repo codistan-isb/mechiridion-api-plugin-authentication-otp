@@ -52,6 +52,14 @@ input addMemberInput {
   password: String
   parentId: ID
 }
+input updateMemberInput {
+  accountId: ID!
+  userName: String
+  firstName: String
+  lastName: String
+  isDeleted: Boolean
+  isActive: Boolean
+}
 enum memberRoleValue {
   shopOwner
   shopMember
@@ -82,6 +90,11 @@ type sendOtpResponse {
   dict: dict
 }
 
+type verifyOTPResponse {
+  status: Boolean
+  response: String
+}
+
 extend type Mutation {
   checkUserExist(phone: String, email: String): Boolean
   sendOTP(phone: String, email: String): Boolean
@@ -93,13 +106,10 @@ extend type Mutation {
     params: AuthenticateParamsInput!
   ): LoginResult
   addMember(input: addMemberInput): MemberPayload
-  
+  updateMember(input: updateMemberInput): MemberPayload
+  deleteMember(id: ID!): MemberPayload
 }
 
-type verifyOTPResponse {
-  status: Boolean
-  response: String
-}
 extend type Query {
   getAllMembers: MemberPayload
 }
