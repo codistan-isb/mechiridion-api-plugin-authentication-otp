@@ -103,12 +103,12 @@ export default {
     const accountsServer = injector.get(server_1.AccountsServer);
     const accountsPassword = injector.get(password_1.AccountsPassword);
     let userId;
-    if (!ctx.authToken) {
-      throw new ReactionError("access-denied", "Please Login First");
-    }
-    if (ctx.user === undefined || ctx.user === null) {
-      throw new ReactionError("access-denied", "Please Login First");
-    }
+    // if (!ctx.authToken) {
+    //   throw new ReactionError("access-denied", "Please Login First");
+    // }
+    // if (ctx.user === undefined || ctx.user === null) {
+    //   throw new ReactionError("access-denied", "Please Login First");
+    // }
     userId = await accountsPassword.createUser(user);
     if (!accountsServer.options.enableAutologin) {
       return {
@@ -141,7 +141,7 @@ export default {
         createdAt: now,
         updatedAt: now,
         isDeleted: false,
-        isActive: false,
+        // isActive: false,
       };
       const accountAdded = await Accounts.insertOne(account);
       // console.log("account Added:- ", accountAdded)
@@ -447,6 +447,7 @@ export default {
             phone: input.phone,
             userName: input.userName,
           },
+          profileImage: input.profileImage,
           userName: input.userName,
           shopId: null,
           state: "new",
@@ -496,6 +497,7 @@ export default {
             phone: input.phone,
             userName: input.userName,
           },
+          profileImage: input.profileImage,
           userName: input.userName,
           shopId: null,
           state: "new",
@@ -609,9 +611,9 @@ export default {
   },
   async deleteMember(parent, args, context, info) {
     console.log("args:: ", args);
-    if (!!args) {
-      throw new ReactionError("invalid-argument", "id is required");
-    }
+    // if (!!args) {
+    //   throw new ReactionError("invalid-argument", "id is required");
+    // }
     const { id } = args;
     if (!context.authToken) {
       throw new ReactionError("access-denied", "Please Login First");
@@ -622,13 +624,13 @@ export default {
     const { users, Accounts } = context.collections;
     console.log("user ", context.user);
     const account = await Accounts.findOne(
-      { _id: id, parentId: context?.user?._id || context?.user?.id },
+      { _id: id, parentId: context?.user?._id },
       { projection: { userId: 1 } }
     );
     console.log("account ", account);
     const updates = {};
     const updatedFields = [];
-    if (!account.userId) {
+    if (!account?.userId) {
       throw new ReactionError("not-found", "Account not found");
     }
     updates["isDeleted"] = true;

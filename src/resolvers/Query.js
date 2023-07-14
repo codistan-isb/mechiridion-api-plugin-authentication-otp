@@ -14,7 +14,7 @@ export default {
       parentId: context.user._id || context.user.id,
       memberRole: "shopMember",
     }).toArray();
-    // console.log("memberDataResponse ", memberDataResponse);
+    console.log("memberDataResponse ", memberDataResponse);
     if (memberDataResponse) {
       return {
         status: true,
