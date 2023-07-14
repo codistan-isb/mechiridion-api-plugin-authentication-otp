@@ -127,7 +127,7 @@ export default {
             provides: "default",
           },
         ],
-        name: null,
+        name: user.firstName + " " + user.lastName,
         profile: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -138,6 +138,7 @@ export default {
         state: "new",
         userId: userId,
         UserRole: user.UserRole,
+        memberRole: user.memberRoleValue,
         createdAt: now,
         updatedAt: now,
         isDeleted: false,

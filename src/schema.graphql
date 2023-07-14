@@ -18,6 +18,7 @@ extend input CreateUserInput {
   UserRole: UserRoleValue
   isDeleted: Boolean
   isActive: Boolean
+  memberRole: memberRoleValue
 }
 enum UserRoleValue {
   admin
@@ -75,6 +76,7 @@ type CreateUserResult {
   UserRole: UserRoleValue
   isDeleted: Boolean
   isActive: Boolean
+  memberRole: memberRoleValue
 }
 
 type phone {
