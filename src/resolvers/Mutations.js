@@ -539,6 +539,7 @@ export default {
       memberRole,
       isActive,
       parentId,
+      profileImage,
     } = input;
     if (!accountId) throw new ReactionError("access-denied", "Access Denied");
     const account = await Accounts.findOne(
@@ -572,6 +573,10 @@ export default {
     if (typeof lastName === "string" || lastName === null) {
       updates["profile.lastName"] = lastName;
       updatedFields.push("lastName");
+    }
+    if (typeof profileImage === "string" || profileImage === null) {
+      updates["profileImage"] = profileImage;
+      updatedFields.push("profileImage");
     }
     console.log("updates ", updates);
     console.log("updatedFields ", updatedFields);

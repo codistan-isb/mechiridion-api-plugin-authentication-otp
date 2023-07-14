@@ -60,6 +60,7 @@ input updateMemberInput {
   lastName: String
   isDeleted: Boolean
   isActive: Boolean
+  profileImage: String
 }
 enum memberRoleValue {
   shopOwner
@@ -114,4 +115,5 @@ extend type Mutation {
 
 extend type Query {
   getAllMembers: MemberPayload
+  getMemberById(id: ID!): MemberPayload
 }
