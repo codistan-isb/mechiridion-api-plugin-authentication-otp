@@ -32,7 +32,7 @@ export default async (app) => {
         // You can apply some custom validation
         // console.log("user", user)
         let userObj = {};
-        userObj = { ...user,  phone: user.phone, phoneVerified: false  }
+        userObj = { ...user, phone: user.phone, phoneVerified: false }
 
         // We specify all the fields that can be inserted in the database
         return userObj;
@@ -47,6 +47,14 @@ export default async (app) => {
       db: accountsMongo,
       enableAutologin: true,
       ambiguousErrorMessages: false,
+      tokenConfigs: {
+        accessToken: {
+          expiresIn: '15d',
+        },
+        refreshToken: {
+          expiresIn: '30d',
+        }
+      },
       sendMail: async ({ to, text }) => {
         const query = text.split("/");
         const token = query[query.length - 1];
